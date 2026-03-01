@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LD Flow</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -17,6 +19,17 @@
     --text: #1a1a1a;
     --muted: #888;
     --light: #f9f9f7;
+  }
+
+  body.dark {
+    --bg: #111113;
+    --surface: #1c1c1f;
+    --border: #2e2e33;
+    --aff: #3db876;
+    --neg: #e05555;
+    --text: #e2e2e8;
+    --muted: #666;
+    --light: #18181c;
   }
 
   body {
@@ -33,19 +46,14 @@
     padding: 10px 16px;
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
     flex-wrap: wrap;
     position: sticky;
     top: 0;
-    z-index: 50;
+    z-index: 100;
   }
 
-  .brand {
-    font-weight: 500;
-    font-size: 14px;
-    color: var(--text);
-    white-space: nowrap;
-  }
+  .brand { font-weight: 500; font-size: 14px; color: var(--text); white-space: nowrap; }
 
   .res-input {
     flex: 1;
@@ -62,6 +70,33 @@
   .res-input::placeholder { color: var(--muted); }
   .res-input:focus { border-color: #aaa; }
 
+  .topbar-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.1s;
+    white-space: nowrap;
+  }
+  .topbar-btn:hover { color: var(--text); border-color: var(--muted); }
+  .topbar-btn.active { color: var(--text); border-color: var(--text); background: var(--light); }
+  .topbar-btn.danger:hover { color: var(--neg); border-color: var(--neg); }
+  .topbar-btn.save-cloud { color: var(--aff); border-color: var(--aff); }
+  .topbar-btn.save-cloud:hover { background: var(--aff); color: white; }
+
+  .user-pill {
+    font-size: 10px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .user-pill span { color: var(--text); }
+
   .timers-row {
     background: var(--surface);
     border-bottom: 2px solid var(--border);
@@ -72,11 +107,7 @@
     flex-wrap: wrap;
   }
 
-  .timer-block {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
+  .timer-block { display: flex; align-items: center; gap: 8px; }
 
   .timer-label {
     font-size: 10px;
@@ -114,7 +145,7 @@
     transition: background 0.1s;
     white-space: nowrap;
   }
-  .tbtn:hover { background: #eee; }
+  .tbtn:hover { background: var(--border); }
   .tbtn.stop-aff { background: var(--aff); border-color: var(--aff); color: white; }
   .tbtn.stop-neg { background: var(--neg); border-color: var(--neg); color: white; }
   .tbtn.stop-speech { background: #1a5c9b; border-color: #1a5c9b; color: white; }
@@ -131,55 +162,178 @@
     cursor: pointer;
   }
 
-  .divider-v { width: 1px; height: 28px; background: var(--border); }
+  .divider-v { width: 1px; height: 28px; background: var(--border); flex-shrink: 0; }
 
-  .clear-btn {
+  .settings-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+    flex-direction: column;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease;
+    display: flex;
+  }
+  .settings-bar.open { max-height: 700px; overflow-y: auto; }
+
+  .settings-section {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .settings-section:last-child { border-bottom: none; }
+
+  .settings-section-label {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    min-width: 80px;
+    padding-top: 2px;
+  }
+
+  .settings-body {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    flex: 1;
+  }
+
+  .toggle {
+    width: 32px;
+    height: 18px;
+    border-radius: 9px;
+    background: var(--border);
+    position: relative;
+    cursor: pointer;
+    border: none;
+    transition: background 0.15s;
+    flex-shrink: 0;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: white;
+    top: 3px; left: 3px;
+    transition: left 0.15s;
+  }
+  .toggle.on { background: var(--aff); }
+  .toggle.on::after { left: 17px; }
+
+  .settings-btn {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
     padding: 3px 9px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border);
     border-radius: 3px;
     background: transparent;
     color: var(--muted);
     cursor: pointer;
+    transition: all 0.1s;
   }
-  .clear-btn:hover { border-color: var(--neg); color: var(--neg); }
+  .settings-btn:hover { color: var(--text); border-color: var(--muted); }
+
+  .tag-editor { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+  .tag-editor-item {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    background: var(--light);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 2px 4px 2px 6px;
+  }
+
+  .tag-editor-input {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    outline: none;
+    width: 80px;
+  }
+
+  .tag-editor-remove {
+    background: none; border: none;
+    color: var(--muted); cursor: pointer;
+    font-size: 13px; line-height: 1;
+    padding: 0 2px;
+  }
+  .tag-editor-remove:hover { color: var(--neg); }
+
+  .tag-add-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    border: 1px dashed var(--border);
+    border-radius: 3px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.1s;
+  }
+  .tag-add-btn:hover { border-color: var(--muted); color: var(--text); }
+
+  .speech-editor { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+
+  .speech-editor-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+  .speech-editor-input {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--light);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text);
+    outline: none;
+    padding: 3px 6px;
+  }
+  .speech-editor-input.label-input { width: 52px; }
+  .speech-editor-input.time-input  { width: 48px; }
+
+  .speech-side-badge {
+    font-size: 9px;
+    padding: 1px 6px;
+    border-radius: 2px;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.05em;
+  }
+  .speech-side-badge.aff { background: rgba(26,107,60,0.1); color: var(--aff); border: 1px solid var(--aff); }
+  .speech-side-badge.neg { background: rgba(155,26,26,0.1); color: var(--neg); border: 1px solid var(--neg); }
+
+  .cx-toggle-row {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; color: var(--muted);
+    margin-bottom: 8px;
+  }
 
   .flow-grid {
     display: grid;
-    grid-template-columns: repeat(8, minmax(155px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
     overflow-x: auto;
-    min-height: calc(100vh - 108px);
+    min-height: calc(100vh - 130px);
   }
 
-  .col {
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-  }
+  .col { border-right: 1px solid var(--border); display: flex; flex-direction: column; }
   .col:last-child { border-right: none; }
 
-  .col-head {
-    padding: 6px 8px 5px;
-    border-bottom: 2px solid;
-    background: var(--surface);
-
-  }
+  .col-head { padding: 6px 8px 5px; border-bottom: 2px solid; background: var(--surface); }
   .col.aff .col-head { border-color: var(--aff); }
   .col.neg .col-head { border-color: var(--neg); }
 
-  .col-label {
-    font-size: 13px;
-    font-weight: 500;
-  }
+  .col-label { font-size: 13px; font-weight: 500; }
   .col.aff .col-label { color: var(--aff); }
   .col.neg .col-label { color: var(--neg); }
 
-  .col-meta {
-    font-size: 9px;
-    color: var(--muted);
-    margin-top: 1px;
-  }
+  .col-meta { font-size: 9px; color: var(--muted); margin-top: 1px; }
 
   .cards { flex: 1; padding: 5px 5px 4px; background: var(--bg); }
 
@@ -195,18 +349,13 @@
   .card.tag-i { border-left: 3px solid #6b35a8; }
   .card.tag-x { border-left: 3px solid #999; }
 
-  .tag-row { display: flex; gap: 3px; padding: 4px 4px 0; }
+  .tag-row { display: flex; gap: 3px; padding: 4px 4px 0; flex-wrap: wrap; }
 
   .tag-pill {
-    font-size: 9px;
-    padding: 1px 5px;
-    border-radius: 2px;
-    cursor: pointer;
-    border: 1px solid #e0e0e0;
-    background: transparent;
-    color: var(--muted);
-    font-family: 'IBM Plex Mono', monospace;
-    transition: all 0.1s;
+    font-size: 9px; padding: 1px 5px; border-radius: 2px;
+    cursor: pointer; border: 1px solid #e0e0e0;
+    background: transparent; color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace; transition: all 0.1s;
   }
   .tag-pill:hover { border-color: #999; color: var(--text); }
   .tag-pill.on-v { background: #fef9e7; border-color: #c09000; color: #7a5e00; }
@@ -215,44 +364,137 @@
   .tag-pill.on-x { background: #f4f4f4; border-color: #999; color: #555; }
 
   .card-ta {
-    width: 100%;
-    background: transparent;
-    border: none;
-    color: var(--text);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11.5px;
-    line-height: 1.55;
-    resize: none;
-    padding: 4px 20px 6px 6px;
-    outline: none;
-    min-height: 40px;
+    width: 100%; background: transparent; border: none;
+    color: var(--text); font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px; line-height: 1.55; resize: none;
+    padding: 4px 20px 6px 6px; outline: none; min-height: 40px;
   }
   .card-ta::placeholder { color: #ccc; }
 
   .card-del {
-    position: absolute;
-    top: 3px; right: 3px;
-    background: none; border: none;
-    color: #ccc; cursor: pointer;
-    font-size: 14px; line-height: 1;
-    padding: 0 2px; display: none;
+    position: absolute; top: 3px; right: 3px;
+    background: none; border: none; color: #ccc; cursor: pointer;
+    font-size: 14px; line-height: 1; padding: 0 2px; display: none;
   }
   .card:hover .card-del { display: block; }
   .card-del:hover { color: var(--neg); }
 
   .add-btn {
-    width: 100%;
-    background: transparent;
-    border: 1px dashed #ccc;
-    border-radius: 3px;
-    color: #bbb;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    padding: 9px 5px;
-    cursor: pointer;
-    transition: all 0.12s;
+    width: 100%; background: transparent;
+    border: 1px dashed #ccc; border-radius: 3px;
+    color: #bbb; font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; padding: 9px 5px; cursor: pointer; transition: all 0.12s;
   }
   .add-btn:hover { border-color: #999; color: var(--text); background: var(--surface); }
+
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200; padding: 20px;
+  }
+  .modal-overlay.hidden { display: none; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 28px;
+    width: 100%; max-width: 380px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+
+  .modal h2 { font-size: 15px; font-weight: 500; color: var(--text); }
+  .modal p  { font-size: 11px; color: var(--muted); line-height: 1.6; }
+
+  .modal-input {
+    width: 100%; padding: 7px 10px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    background: var(--light); border: 1px solid var(--border);
+    border-radius: 3px; color: var(--text); outline: none;
+  }
+  .modal-input:focus { border-color: #aaa; }
+
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+  .modal-btn {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    padding: 6px 14px; border-radius: 3px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--light);
+    color: var(--text); transition: all 0.1s;
+  }
+  .modal-btn:hover { background: var(--border); }
+  .modal-btn.primary { background: var(--text); color: var(--surface); border-color: var(--text); }
+  .modal-btn.primary:hover { opacity: 0.85; }
+  .modal-btn.aff { background: var(--aff); color: white; border-color: var(--aff); }
+  .modal-btn.aff:hover { opacity: 0.85; }
+
+  .modal-error { font-size: 11px; color: var(--neg); }
+  .modal-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); }
+  .modal-tab {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    padding: 6px 14px; cursor: pointer; border: none;
+    background: transparent; color: var(--muted);
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    transition: all 0.1s;
+  }
+  .modal-tab.active { color: var(--text); border-bottom-color: var(--text); }
+
+  .flows-list { display: flex; flex-direction: column; gap: 4px; max-height: 280px; overflow-y: auto; }
+
+  .flow-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 10px; background: var(--light);
+    border: 1px solid var(--border); border-radius: 3px;
+    cursor: pointer; transition: border-color 0.1s;
+  }
+  .flow-item:hover { border-color: var(--muted); }
+
+  .flow-item-res { font-size: 12px; color: var(--text); flex: 1; }
+  .flow-item-date { font-size: 10px; color: var(--muted); white-space: nowrap; margin-left: 8px; }
+  .flow-item-del {
+    background: none; border: none; color: #ccc;
+    cursor: pointer; font-size: 13px; padding: 0 3px; margin-left: 4px;
+  }
+  .flow-item-del:hover { color: var(--neg); }
+
+  .star-popup {
+    position: fixed; bottom: 20px; right: 20px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: 16px 18px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    z-index: 150; max-width: 260px;
+    display: flex; flex-direction: column; gap: 10px;
+    animation: slideup 0.3s ease;
+  }
+  .star-popup.hidden { display: none; }
+
+  @keyframes slideup {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .star-popup-close {
+    position: absolute; top: 8px; right: 10px;
+    background: none; border: none; color: var(--muted);
+    cursor: pointer; font-size: 15px; line-height: 1;
+  }
+  .star-popup p { font-size: 11px; color: var(--text); line-height: 1.5; padding-right: 16px; }
+  .star-link {
+    font-size: 11px; color: var(--aff); text-decoration: none;
+    border: 1px solid var(--aff); border-radius: 3px;
+    padding: 5px 10px; text-align: center; transition: all 0.1s;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .star-link:hover { background: var(--aff); color: white; }
+
+  .sort-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 6px 16px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 11px; color: var(--muted);
+  }
 </style>
 </head>
 <body>
@@ -260,38 +502,89 @@
 <div class="topbar">
   <span class="brand">LD flow</span>
   <input class="res-input" id="res" placeholder="Resolution…" />
-  <button class="clear-btn" onclick="clearAll()">clear all</button>
+  <button class="topbar-btn save-cloud" onclick="saveToCloud()" id="cloud-save-btn" style="display:none">save</button>
+  <button class="topbar-btn" onclick="openFlowsModal()" id="my-flows-btn" style="display:none">my flows</button>
+  <button class="topbar-btn" onclick="exportPDF()">pdf</button>
+  <button class="topbar-btn" id="settings-toggle" onclick="toggleSettings()">settings</button>
+  <button class="topbar-btn danger" onclick="clearAll()">clear</button>
+  <div class="user-pill" id="user-pill">
+    <button class="topbar-btn" onclick="openAuthModal()">log in</button>
+  </div>
+</div>
+
+<div class="settings-bar" id="settings-bar">
+  <div class="settings-section">
+    <span class="settings-section-label">Appearance</span>
+    <div class="settings-body">
+      <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text);cursor:pointer;">
+        <button class="toggle" id="dark-toggle" onclick="toggleDark()"></button>
+        Dark mode
+      </label>
+    </div>
+  </div>
+  <div class="settings-section">
+    <span class="settings-section-label">Speeches</span>
+    <div class="settings-body" style="flex-direction:column;align-items:flex-start;">
+      <div class="cx-toggle-row">
+        <button class="toggle" id="cx-toggle" onclick="toggleCrossfire()"></button>
+        Show crossfire columns
+      </div>
+      <div class="speech-editor" id="speech-editor"></div>
+    </div>
+  </div>
+  <div class="settings-section">
+    <span class="settings-section-label">Tags</span>
+    <div class="settings-body">
+      <div class="tag-editor" id="tag-editor"></div>
+      <button class="tag-add-btn" onclick="addTag()">+ add tag</button>
+    </div>
+  </div>
+  <div class="settings-section">
+    <span class="settings-section-label">Timers</span>
+    <div class="settings-body">
+      <label style="font-size:11px;color:var(--text);display:flex;align-items:center;gap:8px;">
+        Prep time (each side)
+        <input type="number" id="prep-time-input" min="60" max="600" step="30"
+          style="width:64px;font-family:'IBM Plex Mono',monospace;font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:3px;background:var(--light);color:var(--text);outline:none;"
+          oninput="updatePrepTime(this.value)" />
+        sec
+      </label>
+    </div>
+  </div>
+  <div class="settings-section">
+    <span class="settings-section-label">Display</span>
+    <div class="settings-body">
+      <label style="font-size:11px;color:var(--text);display:flex;align-items:center;gap:8px;">
+        Card text size
+        <input type="range" id="font-size-input" min="9" max="16" step="1" style="width:80px;" oninput="updateFontSize(this.value)" />
+        <span id="font-size-label">12px</span>
+      </label>
+    </div>
+  </div>
+  <div class="settings-section">
+    <span class="settings-section-label">Reset</span>
+    <div class="settings-body">
+      <button class="settings-btn" onclick="resetSettings()" style="color:var(--neg);border-color:var(--neg);">reset all settings</button>
+    </div>
+  </div>
 </div>
 
 <div class="timers-row">
   <div class="timer-block">
     <span class="timer-label">Speech</span>
-    <select class="speech-sel" id="speech-sel" onchange="loadSpeech()">
-      <option value="360">AC 6:00</option>
-      <option value="180">CX 3:00</option>
-      <option value="420">NC 7:00</option>
-      <option value="180">CX 3:00</option>
-      <option value="240">1AR 4:00</option>
-      <option value="180">CX 3:00</option>
-      <option value="360">NR 6:00</option>
-      <option value="180">2AR 3:00</option>
-    </select>
+    <select class="speech-sel" id="speech-sel" onchange="loadSpeech()"></select>
     <span class="timer-display" id="speech-disp">6:00</span>
     <button class="tbtn" id="speech-btn" onclick="toggleSpeech()">start</button>
     <button class="tbtn" onclick="resetSpeech()">↺</button>
   </div>
-
   <div class="divider-v"></div>
-
   <div class="timer-block">
     <span class="timer-label" style="color:var(--aff)">Aff prep</span>
     <span class="timer-display prep-display" id="aff-disp">4:00</span>
     <button class="tbtn" id="aff-btn" onclick="togglePrep('aff')">use</button>
     <button class="tbtn" onclick="resetPrep('aff')">↺</button>
   </div>
-
   <div class="divider-v"></div>
-
   <div class="timer-block">
     <span class="timer-label" style="color:var(--neg)">Neg prep</span>
     <span class="timer-display prep-display" id="neg-disp">4:00</span>
@@ -302,27 +595,507 @@
 
 <div class="flow-grid" id="grid"></div>
 
-<script>
-const speeches = [
-  { id: 'ac',  label: 'AC',  name: 'Aff Constructive',   side: 'aff', time: '6 min' },
-  { id: 'cx1', label: 'CX',  name: 'Cross Examination',  side: 'neg', time: '3 min' },
-  { id: 'nc',  label: 'NC',  name: 'Neg Constructive',   side: 'neg', time: '7 min' },
-  { id: 'cx2', label: 'CX',  name: 'Cross Examination',  side: 'aff', time: '3 min' },
-  { id: '1ar', label: '1AR', name: '1st Aff Rebuttal',   side: 'aff', time: '4 min' },
-  { id: 'cx3', label: 'CX',  name: 'Cross Examination',  side: 'neg', time: '3 min' },
-  { id: 'nr',  label: 'NR',  name: 'Neg Rebuttal',       side: 'neg', time: '6 min' },
-  { id: '2ar', label: '2AR', name: '2nd Aff Rebuttal',   side: 'aff', time: '3 min' },
-];
+<div class="modal-overlay hidden" id="auth-modal">
+  <div class="modal">
+    <div class="modal-tabs">
+      <button class="modal-tab active" id="tab-login" onclick="switchAuthTab('login')">log in</button>
+      <button class="modal-tab" id="tab-signup" onclick="switchAuthTab('signup')">sign up</button>
+    </div>
+    <h2 id="auth-title">Log in to save flows</h2>
+    <input class="modal-input" id="auth-email" type="email" placeholder="email" />
+    <input class="modal-input" id="auth-password" type="password" placeholder="password" />
+    <div class="modal-error hidden" id="auth-error"></div>
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="closeModal('auth-modal')">cancel</button>
+      <button class="modal-btn primary" id="auth-submit" onclick="submitAuth()">log in</button>
+    </div>
+  </div>
+</div>
 
-const tagDefs = [
-  { key: 'v', label: 'val' },
-  { key: 'c', label: 'cont' },
-  { key: 'i', label: 'imp' },
-  { key: 'x', label: 'drop' },
-];
+<div class="modal-overlay hidden" id="flows-modal">
+  <div class="modal" style="max-width:460px;">
+    <h2>My flows</h2>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <input class="modal-input" id="flows-search" placeholder="search by resolution…" oninput="filterFlows()" style="flex:1;" />
+      <select id="flows-sort" onchange="filterFlows()"
+        style="font-family:'IBM Plex Mono',monospace;font-size:11px;padding:6px 8px;border:1px solid var(--border);border-radius:3px;background:var(--light);color:var(--text);outline:none;cursor:pointer;">
+        <option value="date-desc">newest first</option>
+        <option value="date-asc">oldest first</option>
+        <option value="res-az">resolution A→Z</option>
+        <option value="res-za">resolution Z→A</option>
+      </select>
+    </div>
+    <div class="flows-list" id="flows-list"></div>
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="closeModal('flows-modal')">close</button>
+      <button class="modal-btn aff" onclick="saveToCloud()">save current</button>
+    </div>
+  </div>
+</div>
+
+<div class="star-popup hidden" id="star-popup">
+  <button class="star-popup-close" onclick="dismissStarPopup()">×</button>
+  <p>Enjoying LD Flow? Star the repo to support development ⭐</p>
+  <a class="star-link" href="https://github.com/yohaann196/ld-flow" target="_blank" onclick="dismissStarPopup()">⭐ Star on GitHub</a>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://tevdtpqrfgcuaobrqjxb.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRldmR0cHFyZmdjdWFvYnJxanhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MDU3MjQsImV4cCI6MjA4Nzk4MTcyNH0.fEtFkMD9vbxlJwamVXEqLk86jcluJedwl2tM0GVwCZ8';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+let currentFlowId = null;
+let allCloudFlows = [];
+let authTab = 'login';
+
+db.auth.getSession().then(({ data }) => {
+  if (data.session) setUser(data.session.user);
+});
+
+db.auth.onAuthStateChange((event, session) => {
+  if (session) setUser(session.user);
+  else setUser(null);
+});
+
+function setUser(user) {
+  currentUser = user;
+  const pill = document.getElementById('user-pill');
+  const saveBtn = document.getElementById('cloud-save-btn');
+  const flowsBtn = document.getElementById('my-flows-btn');
+  if (user) {
+    pill.innerHTML = `<span>${user.email}</span> <button class="topbar-btn" onclick="signOut()">log out</button>`;
+    saveBtn.style.display = '';
+    flowsBtn.style.display = '';
+  } else {
+    pill.innerHTML = `<button class="topbar-btn" onclick="openAuthModal()">log in</button>`;
+    saveBtn.style.display = 'none';
+    flowsBtn.style.display = 'none';
+    currentFlowId = null;
+  }
+}
+
+function openAuthModal() {
+  document.getElementById('auth-modal').classList.remove('hidden');
+  document.getElementById('auth-email').focus();
+}
+
+function switchAuthTab(tab) {
+  authTab = tab;
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
+  document.getElementById('auth-title').textContent = tab === 'login' ? 'Log in to save flows' : 'Create an account';
+  document.getElementById('auth-submit').textContent = tab === 'login' ? 'log in' : 'sign up';
+  document.getElementById('auth-error').classList.add('hidden');
+}
+
+async function submitAuth() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const errEl = document.getElementById('auth-error');
+  errEl.classList.add('hidden');
+  document.getElementById('auth-submit').textContent = '…';
+
+  let result;
+  if (authTab === 'login') {
+    result = await db.auth.signInWithPassword({ email, password });
+  } else {
+    result = await db.auth.signUp({ email, password });
+  }
+
+  if (result.error) {
+    errEl.textContent = result.error.message;
+    errEl.classList.remove('hidden');
+    document.getElementById('auth-submit').textContent = authTab === 'login' ? 'log in' : 'sign up';
+    return;
+  }
+
+  closeModal('auth-modal');
+}
+
+async function signOut() {
+  await db.auth.signOut();
+}
+
+async function saveToCloud() {
+  if (!currentUser) { openAuthModal(); return; }
+  const resolution = document.getElementById('res').value;
+  const payload = {
+    user_id: currentUser.id,
+    resolution,
+    data: flow,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (currentFlowId) {
+    await db.from('flows').update(payload).eq('id', currentFlowId);
+  } else {
+    const { data } = await db.from('flows').insert(payload).select().single();
+    if (data) currentFlowId = data.id;
+  }
+
+  const btn = document.getElementById('cloud-save-btn');
+  btn.textContent = 'saved ✓';
+  setTimeout(() => { btn.textContent = 'save'; }, 1800);
+}
+
+async function loadCloudFlows() {
+  if (!currentUser) return;
+  const { data } = await db.from('flows').select('*').eq('user_id', currentUser.id).order('updated_at', { ascending: false });
+  allCloudFlows = data || [];
+}
+
+async function openFlowsModal() {
+  await loadCloudFlows();
+  filterFlows();
+  document.getElementById('flows-modal').classList.remove('hidden');
+}
+
+function filterFlows() {
+  const query = document.getElementById('flows-search').value.toLowerCase();
+  const sort = document.getElementById('flows-sort').value;
+
+  let filtered = allCloudFlows.filter(f => (f.resolution || '').toLowerCase().includes(query));
+
+  filtered.sort((a, b) => {
+    if (sort === 'date-desc') return new Date(b.updated_at) - new Date(a.updated_at);
+    if (sort === 'date-asc')  return new Date(a.updated_at) - new Date(b.updated_at);
+    if (sort === 'res-az')    return (a.resolution || '').localeCompare(b.resolution || '');
+    if (sort === 'res-za')    return (b.resolution || '').localeCompare(a.resolution || '');
+    return 0;
+  });
+
+  const list = document.getElementById('flows-list');
+  list.innerHTML = '';
+
+  if (!filtered.length) {
+    list.innerHTML = '<div style="font-size:11px;color:var(--muted);padding:12px 0;">No flows yet.</div>';
+    return;
+  }
+
+  filtered.forEach(flowItem => {
+    const row = document.createElement('div');
+    row.className = 'flow-item';
+
+    const res = document.createElement('div');
+    res.className = 'flow-item-res';
+    res.textContent = flowItem.resolution || '(untitled)';
+
+    const date = document.createElement('div');
+    date.className = 'flow-item-date';
+    date.textContent = new Date(flowItem.updated_at).toLocaleDateString();
+
+    const del = document.createElement('button');
+    del.className = 'flow-item-del';
+    del.textContent = '×';
+    del.onclick = async (e) => {
+      e.stopPropagation();
+      if (!confirm('Delete this flow?')) return;
+      await db.from('flows').delete().eq('id', flowItem.id);
+      allCloudFlows = allCloudFlows.filter(f => f.id !== flowItem.id);
+      filterFlows();
+    };
+
+    row.onclick = () => {
+      flow = flowItem.data;
+      currentFlowId = flowItem.id;
+      document.getElementById('res').value = flowItem.resolution || '';
+      renderFlow();
+      closeModal('flows-modal');
+    };
+
+    row.appendChild(res);
+    row.appendChild(date);
+    row.appendChild(del);
+    list.appendChild(row);
+  });
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.add('hidden');
+}
+
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.add('hidden'); });
+});
+
+function exportPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const resolution = document.getElementById('res').value || 'LD Flow';
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margin = 10;
+  const visibleSpeeches = settings.speeches.filter(s => settings.showCrossfire || !s.isCrossfire);
+  const colW = (pageW - margin * 2) / visibleSpeeches.length;
+
+  doc.setFont('courier', 'bold');
+  doc.setFontSize(10);
+  doc.text(resolution, margin, margin + 4);
+
+  doc.setFont('courier', 'normal');
+  doc.setFontSize(7);
+
+  visibleSpeeches.forEach((speech, i) => {
+    const x = margin + i * colW;
+    doc.setFont('courier', 'bold');
+    doc.setFontSize(8);
+    const side = speech.side === 'aff' ? [26, 107, 60] : [155, 26, 26];
+    doc.setTextColor(...side);
+    doc.text(speech.label, x + 2, margin + 12);
+    doc.setTextColor(80, 80, 80);
+    doc.setFontSize(6);
+    doc.setFont('courier', 'normal');
+    doc.text(speech.name, x + 2, margin + 16);
+
+    doc.setDrawColor(200, 200, 200);
+    doc.line(x + colW, margin, x + colW, pageH - margin);
+    doc.setDrawColor(side[0], side[1], side[2]);
+    doc.line(x, margin + 18, x + colW - 1, margin + 18);
+
+    doc.setTextColor(30, 30, 30);
+    doc.setFontSize(7);
+    let y = margin + 24;
+
+    (flow[speech.id] || []).forEach(card => {
+      if (!card.text.trim()) return;
+      const lines = doc.splitTextToSize(card.text, colW - 6);
+      if (y + lines.length * 4 > pageH - margin) return;
+      if (card.tag) {
+        const tagColors = { v: [192, 144, 0], c: [32, 96, 160], i: [107, 53, 168], x: [120, 120, 120] };
+        const tc = tagColors[card.tag] || [120, 120, 120];
+        const tagLabel = (settings.tags.find(t => t.key === card.tag) || {}).label || card.tag;
+        doc.setTextColor(...tc);
+        doc.setFontSize(5.5);
+        doc.text('[' + tagLabel + ']', x + 2, y);
+        y += 3.5;
+      }
+      doc.setTextColor(30, 30, 30);
+      doc.setFontSize(7);
+      doc.text(lines, x + 2, y);
+      y += lines.length * 4 + 2;
+    });
+  });
+
+  doc.save((resolution || 'flow') + '.pdf');
+}
+
+function showStarPopup() {
+  if (localStorage.getItem('ldflow-starred')) return;
+  setTimeout(() => {
+    document.getElementById('star-popup').classList.remove('hidden');
+  }, 90000);
+}
+
+function dismissStarPopup() {
+  document.getElementById('star-popup').classList.add('hidden');
+  localStorage.setItem('ldflow-starred', '1');
+}
+
+let settings = {
+  darkMode: false,
+  showCrossfire: true,
+  speeches: [
+    { id: 'ac',  label: 'AC',  name: 'Aff Constructive',   side: 'aff', time: '6 min',  seconds: 360 },
+    { id: 'cx1', label: 'CX',  name: 'Cross Examination',  side: 'neg', time: '3 min',  seconds: 180, isCrossfire: true },
+    { id: 'nc',  label: 'NC',  name: 'Neg Constructive',   side: 'neg', time: '7 min',  seconds: 420 },
+    { id: 'cx2', label: 'CX',  name: 'Cross Examination',  side: 'aff', time: '3 min',  seconds: 180, isCrossfire: true },
+    { id: '1ar', label: '1AR', name: '1st Aff Rebuttal',   side: 'aff', time: '4 min',  seconds: 240 },
+    { id: 'cx3', label: 'CX',  name: 'Cross Examination',  side: 'neg', time: '3 min',  seconds: 180, isCrossfire: true },
+    { id: 'nr',  label: 'NR',  name: 'Neg Rebuttal',       side: 'neg', time: '6 min',  seconds: 360 },
+    { id: '2ar', label: '2AR', name: '2nd Aff Rebuttal',   side: 'aff', time: '3 min',  seconds: 180 },
+  ],
+  tags: [
+    { key: 'v', label: 'value' },
+    { key: 'c', label: 'contention' },
+    { key: 'i', label: 'impact' },
+    { key: 'x', label: 'drop' },
+  ],
+  prepSeconds: 240,
+  fontSize: 12,
+};
+
+function saveSettings() {
+  try { localStorage.setItem('ldflow-settings', JSON.stringify(settings)); } catch(e) {}
+}
+
+function resetSettings() {
+  if (!confirm('Reset all settings to defaults?')) return;
+  localStorage.removeItem('ldflow-settings');
+  location.reload();
+}
+
+function loadSettings() {
+  try {
+    const s = localStorage.getItem('ldflow-settings');
+    if (s) {
+      const saved = JSON.parse(s);
+      if (saved.speeches && saved.speeches.length) settings.speeches = saved.speeches;
+      if (saved.tags && saved.tags.length) settings.tags = saved.tags;
+      if (saved.darkMode !== undefined) settings.darkMode = saved.darkMode;
+      if (saved.showCrossfire !== undefined) settings.showCrossfire = saved.showCrossfire;
+      if (saved.prepSeconds) settings.prepSeconds = saved.prepSeconds;
+      if (saved.fontSize) settings.fontSize = saved.fontSize;
+    }
+  } catch(e) {}
+  applySettings();
+}
+
+function applySettings() {
+  document.body.classList.toggle('dark', settings.darkMode);
+  document.getElementById('dark-toggle').classList.toggle('on', settings.darkMode);
+  document.getElementById('cx-toggle').classList.toggle('on', settings.showCrossfire);
+
+  renderTagEditor();
+  renderSpeechEditor();
+
+  prepSeconds.aff = settings.prepSeconds;
+  prepSeconds.neg = settings.prepSeconds;
+  renderPrep('aff');
+  renderPrep('neg');
+
+  const prepInput = document.getElementById('prep-time-input');
+  if (prepInput) prepInput.value = settings.prepSeconds;
+
+  const fontInput = document.getElementById('font-size-input');
+  const fontLabel = document.getElementById('font-size-label');
+  if (fontInput) fontInput.value = settings.fontSize;
+  if (fontLabel) fontLabel.textContent = settings.fontSize + 'px';
+
+  document.querySelectorAll('.card-ta').forEach(ta => ta.style.fontSize = settings.fontSize + 'px');
+
+  const sel = document.getElementById('speech-sel');
+  if (sel) {
+    sel.innerHTML = '';
+    settings.speeches.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.seconds;
+      opt.textContent = `${s.label} ${s.time}`;
+      sel.appendChild(opt);
+    });
+  }
+}
+
+function toggleSettings() {
+  const bar = document.getElementById('settings-bar');
+  const btn = document.getElementById('settings-toggle');
+  const isOpen = bar.classList.toggle('open');
+  btn.classList.toggle('active', isOpen);
+}
+
+function toggleDark() {
+  settings.darkMode = !settings.darkMode;
+  document.body.classList.toggle('dark', settings.darkMode);
+  document.getElementById('dark-toggle').classList.toggle('on', settings.darkMode);
+  saveSettings();
+}
+
+function toggleCrossfire() {
+  settings.showCrossfire = !settings.showCrossfire;
+  document.getElementById('cx-toggle').classList.toggle('on', settings.showCrossfire);
+  saveSettings();
+  renderFlow();
+}
+
+function renderTagEditor() {
+  const editor = document.getElementById('tag-editor');
+  if (!editor) return;
+  editor.innerHTML = '';
+  settings.tags.forEach((tag, i) => {
+    const item = document.createElement('div');
+    item.className = 'tag-editor-item';
+
+    const input = document.createElement('input');
+    input.className = 'tag-editor-input';
+    input.value = tag.label;
+    input.oninput = function() {
+      settings.tags[i].label = this.value;
+      saveSettings();
+      renderFlow();
+    };
+    item.appendChild(input);
+
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'tag-editor-remove';
+    removeBtn.textContent = '×';
+    removeBtn.onclick = () => {
+      settings.tags.splice(i, 1);
+      saveSettings();
+      renderTagEditor();
+      renderFlow();
+    };
+    item.appendChild(removeBtn);
+    editor.appendChild(item);
+  });
+}
+
+function addTag() {
+  const key = 't' + Date.now().toString(36).slice(-4);
+  settings.tags.push({ key, label: 'new tag' });
+  saveSettings();
+  renderTagEditor();
+  renderFlow();
+  const inputs = document.querySelectorAll('.tag-editor-input');
+  if (inputs.length) { inputs[inputs.length - 1].focus(); inputs[inputs.length - 1].select(); }
+}
+
+function renderSpeechEditor() {
+  const editor = document.getElementById('speech-editor');
+  if (!editor) return;
+  editor.innerHTML = '';
+
+  settings.speeches.forEach((speech, i) => {
+    const row = document.createElement('div');
+    row.className = 'speech-editor-row';
+
+    const badge = document.createElement('span');
+    badge.className = `speech-side-badge ${speech.side}`;
+    badge.textContent = speech.side;
+    row.appendChild(badge);
+
+    const labelInput = document.createElement('input');
+    labelInput.className = 'speech-editor-input label-input';
+    labelInput.value = speech.label;
+    labelInput.oninput = function() { settings.speeches[i].label = this.value; saveSettings(); renderFlow(); };
+    row.appendChild(labelInput);
+
+    const nameInput = document.createElement('input');
+    nameInput.className = 'speech-editor-input';
+    nameInput.style.width = '160px';
+    nameInput.value = speech.name;
+    nameInput.oninput = function() { settings.speeches[i].name = this.value; saveSettings(); renderFlow(); };
+    row.appendChild(nameInput);
+
+    const timeInput = document.createElement('input');
+    timeInput.className = 'speech-editor-input time-input';
+    timeInput.value = speech.time;
+    timeInput.oninput = function() { settings.speeches[i].time = this.value; saveSettings(); renderFlow(); };
+    row.appendChild(timeInput);
+
+    editor.appendChild(row);
+  });
+}
+
+function updatePrepTime(val) {
+  const secs = parseInt(val);
+  if (isNaN(secs) || secs < 30) return;
+  settings.prepSeconds = secs;
+  saveSettings();
+  prepSeconds.aff = secs;
+  prepSeconds.neg = secs;
+  renderPrep('aff');
+  renderPrep('neg');
+}
+
+function updateFontSize(val) {
+  settings.fontSize = parseInt(val);
+  document.getElementById('font-size-label').textContent = settings.fontSize + 'px';
+  document.querySelectorAll('.card-ta').forEach(ta => ta.style.fontSize = settings.fontSize + 'px');
+  saveSettings();
+}
 
 let flow = {};
-speeches.forEach(s => flow[s.id] = []);
+settings.speeches.forEach(s => flow[s.id] = []);
 
 let speechSeconds = 360;
 let speechRunning = false;
@@ -365,26 +1138,22 @@ function renderSpeech() {
   const sign = speechSeconds < 0 ? '-' : '';
   el.textContent = `${sign}${Math.floor(abs / 60)}:${(abs % 60).toString().padStart(2, '0')}`;
   el.className = 'timer-display';
-  if (speechRunning) {
-    el.classList.add(speechSeconds < 0 ? 'over' : speechSeconds <= 30 ? 'warn' : 'running');
-  }
+  if (speechRunning) el.classList.add(speechSeconds < 0 ? 'over' : speechSeconds <= 30 ? 'warn' : 'running');
 }
 
 const prepStart = 240;
 let prepSeconds = { aff: prepStart, neg: prepStart };
 let prepRunning = { aff: false, neg: false };
-let prepTimer = { aff: null, neg: null };
+let prepTimer   = { aff: null,   neg: null   };
 
 function togglePrep(side) {
   const other = side === 'aff' ? 'neg' : 'aff';
-
   if (prepRunning[other]) {
     clearInterval(prepTimer[other]);
     prepRunning[other] = false;
     document.getElementById(`${other}-btn`).textContent = 'use';
     document.getElementById(`${other}-btn`).className = 'tbtn';
   }
-
   if (prepRunning[side]) {
     clearInterval(prepTimer[side]);
     prepRunning[side] = false;
@@ -401,7 +1170,7 @@ function togglePrep(side) {
 function resetPrep(side) {
   clearInterval(prepTimer[side]);
   prepRunning[side] = false;
-  prepSeconds[side] = prepStart;
+  prepSeconds[side] = settings.prepSeconds;
   document.getElementById(`${side}-btn`).textContent = 'use';
   document.getElementById(`${side}-btn`).className = 'tbtn';
   renderPrep(side);
@@ -420,10 +1189,12 @@ function renderPrep(side) {
 
 function addCard(speechId) {
   const card = { id: Date.now(), text: '', tag: null };
+  if (!flow[speechId]) flow[speechId] = [];
   flow[speechId].push(card);
   const cardsArea = document.querySelector(`[data-col="${speechId}"] .cards`);
   const addBtn = cardsArea.querySelector('.add-btn');
   cardsArea.insertBefore(buildCard(speechId, card), addBtn);
+  addBtn.textContent = '+ add';
   cardsArea.querySelector(`[data-card="${card.id}"] .card-ta`).focus();
   save();
 }
@@ -461,7 +1232,7 @@ function buildCard(speechId, card) {
 
   const tagRow = document.createElement('div');
   tagRow.className = 'tag-row';
-  tagDefs.forEach(t => {
+  settings.tags.forEach(t => {
     const btn = document.createElement('button');
     btn.className = `tag-pill${card.tag === t.key ? ' on-' + t.key : ''}`;
     btn.dataset.tagKey = t.key;
@@ -473,19 +1244,12 @@ function buildCard(speechId, card) {
 
   const textarea = document.createElement('textarea');
   textarea.className = 'card-ta';
+  textarea.style.fontSize = settings.fontSize + 'px';
   textarea.value = card.text;
   textarea.placeholder = '…';
   textarea.rows = 2;
-  textarea.oninput = function() {
-    updateText(speechId, card.id, this.value);
-    autoResize(this);
-  };
-  textarea.onkeydown = e => {
-    if (e.key === 'Enter' && e.shiftKey) {
-      e.preventDefault();
-      addCard(speechId);
-    }
-  };
+  textarea.oninput = function() { updateText(speechId, card.id, this.value); autoResize(this); };
+  textarea.onkeydown = e => { if (e.key === 'Enter' && e.shiftKey) { e.preventDefault(); addCard(speechId); } };
   cardEl.appendChild(textarea);
 
   const delBtn = document.createElement('button');
@@ -506,8 +1270,11 @@ function autoResize(ta) {
 function renderFlow() {
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
+  const visible = settings.speeches.filter(s => settings.showCrossfire || !s.isCrossfire);
 
-  speeches.forEach(speech => {
+  visible.forEach(speech => {
+    if (!flow[speech.id]) flow[speech.id] = [];
+
     const col = document.createElement('div');
     col.className = `col ${speech.side}`;
     col.dataset.col = speech.id;
@@ -520,9 +1287,7 @@ function renderFlow() {
     const cardsArea = document.createElement('div');
     cardsArea.className = 'cards';
 
-    flow[speech.id].forEach(card => {
-      cardsArea.appendChild(buildCard(speech.id, card));
-    });
+    flow[speech.id].forEach(card => cardsArea.appendChild(buildCard(speech.id, card)));
 
     const addBtn = document.createElement('button');
     addBtn.className = 'add-btn';
@@ -537,7 +1302,9 @@ function renderFlow() {
 
 function clearAll() {
   if (!confirm('Clear all cards?')) return;
-  speeches.forEach(s => flow[s.id] = []);
+  settings.speeches.forEach(s => flow[s.id] = []);
+  currentFlowId = null;
+  document.getElementById('res').value = '';
   renderFlow();
   save();
 }
@@ -562,11 +1329,13 @@ function load() {
 document.getElementById('res').addEventListener('input', save);
 setInterval(save, 4000);
 
+loadSettings();
 renderFlow();
 renderSpeech();
 renderPrep('aff');
 renderPrep('neg');
 load();
+showStarPopup();
 </script>
 </body>
 </html>
