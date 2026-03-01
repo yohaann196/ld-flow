@@ -1,6 +1,11 @@
 # LD Flow!!
+![GitHub stars](https://img.shields.io/github/stars/yohaann196/ld-flow?style=flat-square)
+![GitHub last commit](https://img.shields.io/github/last-commit/yohaann196/ld-flow?style=flat-square)
+![Made with](https://img.shields.io/badge/made%20with-vanilla%20JS-yellow?style=flat-square)
+![Supabase](https://img.shields.io/badge/backend-Supabase-3ecf8e?style=flat-square)
+![Hosted on](https://img.shields.io/badge/hosted%20on-GitHub%20Pages-blue?style=flat-square)
 
-A flow tool built for Lincoln-Douglas debate. hosted on Github pages
+*flow tool built for Lincoln-Douglas debate.*
 
 ## Features (some are implemented; some are future ideas/checklist)
 
