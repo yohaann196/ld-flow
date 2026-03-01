@@ -1,0 +1,45 @@
+# LD Flow!!
+
+A flow tool built for Lincoln-Douglas debate. hosted on Github pages
+
+## Features (some are implemented; some are future ideas/checklist)
+
+**flowing**
+- 8 speech columns: AC, CX, NC, CX, 1AR, CX, NR, 2AR
+- Tag each argument: value, contention, impact, or drop
+- Cards (flow bullet points) auto-resize as you type, Shift+Enter to add a new card
+- draggable arrows for argument tracking (?), drag and drop cards/copy paste cards (?)
+- Toggle crossfire columns on/off to cut down on visual noise
+
+**timers**
+- Speech timer with a dropdown for each speech and its standard time
+- Separate Aff and Neg prep timers - only one can run at a time
+- Color feedback: blue while running, orange at 30 seconds, red when over
+
+**cloud saves (supabase)**
+- Log in / sign up with email and password
+- Save flows to the cloud and load them from any device
+- "My flows" panel with search and sort by resolution, newest, or oldest
+- Flows are private — only you can see yours
+
+**export**
+- Export any flow to a landscape PDF with speech columns, tags, and resolution header
+
+**settings**
+- Dark mode
+- Rename, add, or remove tag labels
+- Edit speech names, abbreviations, and time labels
+- Show/hide crossfire columns
+- Adjust prep time and card font size
+- Settings persist locally across sessions
+
+## stack
+
+- Vanilla HTML, CSS, JavaScript — no framework
+- [Supabase](https://supabase.com) for auth and cloud storage
+- [jsPDF](https://github.com/parallax/jsPDF) for PDF export
+- [IBM Plex Mono](https://fonts.google.com/specimen/IBM+Plex+Mono) via Google Fonts
+
+---
+
+If this saved you time at a tournament, consider starring the repo ⭐
