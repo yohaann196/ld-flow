@@ -21,12 +21,6 @@
 - Separate Aff and Neg prep timers - only one can run at a time
 - Color feedback: blue while running, orange at 30 seconds, red when over
 
-**cloud saves (supabase)**
-- Log in / sign up with email and password
-- Save flows to the cloud and load them from any device
-- "My flows" panel with search and sort by resolution, newest, or oldest
-- Flows are private — only you can see yours
-
 **export**
 - Export any flow to a landscape PDF with speech columns, tags, and resolution header
 
