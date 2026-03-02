@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LD Flow</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -87,15 +86,6 @@
   .topbar-btn.danger:hover { color: var(--neg); border-color: var(--neg); }
   .topbar-btn.save-cloud { color: var(--aff); border-color: var(--aff); }
   .topbar-btn.save-cloud:hover { background: var(--aff); color: white; }
-
-  .user-pill {
-    font-size: 10px;
-    color: var(--muted);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .user-pill span { color: var(--text); }
 
   .timers-row {
     background: var(--surface);
@@ -367,7 +357,7 @@
     width: 100%; background: transparent; border: none;
     color: var(--text); font-family: 'IBM Plex Mono', monospace;
     font-size: 11.5px; line-height: 1.55; resize: none;
-    padding: 4px 20px 6px 6px; outline: none; min-height: 40px;
+    padding: 4px 36px 6px 6px; outline: none; min-height: 40px;
   }
   .card-ta::placeholder { color: #ccc; }
 
@@ -378,6 +368,15 @@
   }
   .card:hover .card-del { display: block; }
   .card-del:hover { color: var(--neg); }
+
+  .card-copy {
+    position: absolute; top: 3px; right: 20px;
+    background: none; border: none; color: #ccc; cursor: pointer;
+    font-size: 11px; line-height: 1.4; padding: 0 2px; display: none;
+    font-family: monospace;
+  }
+  .card:hover .card-copy { display: block; }
+  .card-copy:hover { color: var(--text); }
 
   .add-btn {
     width: 100%; background: transparent;
@@ -495,6 +494,22 @@
     display: flex; align-items: center; gap: 10px;
     font-size: 11px; color: var(--muted);
   }
+
+  .flow-grid { position: relative; }
+
+  #arrows-svg {
+    position: absolute; top: 0; left: 0;
+    width: 1px; height: 1px;
+    pointer-events: none; z-index: 4; overflow: visible;
+  }
+
+  .card-arrow-overlay {
+    position: absolute; inset: 0; cursor: crosshair;
+    display: none; z-index: 2; border-radius: 2px;
+  }
+  .arrow-mode .card-arrow-overlay { display: block; }
+  .card.arrow-src { box-shadow: 0 0 0 2px #1a5c9b; }
+  .card.arrow-src .card-arrow-overlay { background: rgba(26,92,155,0.08); }
 </style>
 </head>
 <body>
@@ -502,14 +517,10 @@
 <div class="topbar">
   <span class="brand">LD flow</span>
   <input class="res-input" id="res" placeholder="Resolution…" />
-  <button class="topbar-btn save-cloud" onclick="saveToCloud()" id="cloud-save-btn" style="display:none">save</button>
-  <button class="topbar-btn" onclick="openFlowsModal()" id="my-flows-btn" style="display:none">my flows</button>
   <button class="topbar-btn" onclick="exportPDF()">pdf</button>
+  <button class="topbar-btn" id="arrow-mode-btn" onclick="toggleArrowMode()">arrows</button>
   <button class="topbar-btn" id="settings-toggle" onclick="toggleSettings()">settings</button>
   <button class="topbar-btn danger" onclick="clearAll()">clear</button>
-  <div class="user-pill" id="user-pill">
-    <button class="topbar-btn" onclick="openAuthModal()">log in</button>
-  </div>
 </div>
 
 <div class="settings-bar" id="settings-bar">
@@ -595,44 +606,6 @@
 
 <div class="flow-grid" id="grid"></div>
 
-<div class="modal-overlay hidden" id="auth-modal">
-  <div class="modal">
-    <div class="modal-tabs">
-      <button class="modal-tab active" id="tab-login" onclick="switchAuthTab('login')">log in</button>
-      <button class="modal-tab" id="tab-signup" onclick="switchAuthTab('signup')">sign up</button>
-    </div>
-    <h2 id="auth-title">Log in to save flows</h2>
-    <input class="modal-input" id="auth-email" type="email" placeholder="email" />
-    <input class="modal-input" id="auth-password" type="password" placeholder="password" />
-    <div class="modal-error hidden" id="auth-error"></div>
-    <div class="modal-actions">
-      <button class="modal-btn" onclick="closeModal('auth-modal')">cancel</button>
-      <button class="modal-btn primary" id="auth-submit" onclick="submitAuth()">log in</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay hidden" id="flows-modal">
-  <div class="modal" style="max-width:460px;">
-    <h2>My flows</h2>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <input class="modal-input" id="flows-search" placeholder="search by resolution…" oninput="filterFlows()" style="flex:1;" />
-      <select id="flows-sort" onchange="filterFlows()"
-        style="font-family:'IBM Plex Mono',monospace;font-size:11px;padding:6px 8px;border:1px solid var(--border);border-radius:3px;background:var(--light);color:var(--text);outline:none;cursor:pointer;">
-        <option value="date-desc">newest first</option>
-        <option value="date-asc">oldest first</option>
-        <option value="res-az">resolution A→Z</option>
-        <option value="res-za">resolution Z→A</option>
-      </select>
-    </div>
-    <div class="flows-list" id="flows-list"></div>
-    <div class="modal-actions">
-      <button class="modal-btn" onclick="closeModal('flows-modal')">close</button>
-      <button class="modal-btn aff" onclick="saveToCloud()">save current</button>
-    </div>
-  </div>
-</div>
-
 <div class="star-popup hidden" id="star-popup">
   <button class="star-popup-close" onclick="dismissStarPopup()">×</button>
   <p>Enjoying LD Flow? Star the repo to support development ⭐</p>
@@ -640,185 +613,6 @@
 </div>
 
 <script>
-const SUPABASE_URL = 'https://tevdtpqrfgcuaobrqjxb.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRldmR0cHFyZmdjdWFvYnJxanhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MDU3MjQsImV4cCI6MjA4Nzk4MTcyNH0.fEtFkMD9vbxlJwamVXEqLk86jcluJedwl2tM0GVwCZ8';
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-let currentUser = null;
-let currentFlowId = null;
-let allCloudFlows = [];
-let authTab = 'login';
-
-db.auth.getSession().then(({ data }) => {
-  if (data.session) setUser(data.session.user);
-});
-
-db.auth.onAuthStateChange((event, session) => {
-  if (session) setUser(session.user);
-  else setUser(null);
-});
-
-function setUser(user) {
-  currentUser = user;
-  const pill = document.getElementById('user-pill');
-  const saveBtn = document.getElementById('cloud-save-btn');
-  const flowsBtn = document.getElementById('my-flows-btn');
-  if (user) {
-    pill.innerHTML = `<span>${user.email}</span> <button class="topbar-btn" onclick="signOut()">log out</button>`;
-    saveBtn.style.display = '';
-    flowsBtn.style.display = '';
-  } else {
-    pill.innerHTML = `<button class="topbar-btn" onclick="openAuthModal()">log in</button>`;
-    saveBtn.style.display = 'none';
-    flowsBtn.style.display = 'none';
-    currentFlowId = null;
-  }
-}
-
-function openAuthModal() {
-  document.getElementById('auth-modal').classList.remove('hidden');
-  document.getElementById('auth-email').focus();
-}
-
-function switchAuthTab(tab) {
-  authTab = tab;
-  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
-  document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
-  document.getElementById('auth-title').textContent = tab === 'login' ? 'Log in to save flows' : 'Create an account';
-  document.getElementById('auth-submit').textContent = tab === 'login' ? 'log in' : 'sign up';
-  document.getElementById('auth-error').classList.add('hidden');
-}
-
-async function submitAuth() {
-  const email = document.getElementById('auth-email').value.trim();
-  const password = document.getElementById('auth-password').value;
-  const errEl = document.getElementById('auth-error');
-  errEl.classList.add('hidden');
-  document.getElementById('auth-submit').textContent = '…';
-
-  let result;
-  if (authTab === 'login') {
-    result = await db.auth.signInWithPassword({ email, password });
-  } else {
-    result = await db.auth.signUp({ email, password });
-  }
-
-  if (result.error) {
-    errEl.textContent = result.error.message;
-    errEl.classList.remove('hidden');
-    document.getElementById('auth-submit').textContent = authTab === 'login' ? 'log in' : 'sign up';
-    return;
-  }
-
-  closeModal('auth-modal');
-}
-
-async function signOut() {
-  await db.auth.signOut();
-}
-
-async function saveToCloud() {
-  if (!currentUser) { openAuthModal(); return; }
-  const resolution = document.getElementById('res').value;
-  const payload = {
-    user_id: currentUser.id,
-    resolution,
-    data: flow,
-    updated_at: new Date().toISOString(),
-  };
-
-  if (currentFlowId) {
-    await db.from('flows').update(payload).eq('id', currentFlowId);
-  } else {
-    const { data } = await db.from('flows').insert(payload).select().single();
-    if (data) currentFlowId = data.id;
-  }
-
-  const btn = document.getElementById('cloud-save-btn');
-  btn.textContent = 'saved ✓';
-  setTimeout(() => { btn.textContent = 'save'; }, 1800);
-}
-
-async function loadCloudFlows() {
-  if (!currentUser) return;
-  const { data } = await db.from('flows').select('*').eq('user_id', currentUser.id).order('updated_at', { ascending: false });
-  allCloudFlows = data || [];
-}
-
-async function openFlowsModal() {
-  await loadCloudFlows();
-  filterFlows();
-  document.getElementById('flows-modal').classList.remove('hidden');
-}
-
-function filterFlows() {
-  const query = document.getElementById('flows-search').value.toLowerCase();
-  const sort = document.getElementById('flows-sort').value;
-
-  let filtered = allCloudFlows.filter(f => (f.resolution || '').toLowerCase().includes(query));
-
-  filtered.sort((a, b) => {
-    if (sort === 'date-desc') return new Date(b.updated_at) - new Date(a.updated_at);
-    if (sort === 'date-asc')  return new Date(a.updated_at) - new Date(b.updated_at);
-    if (sort === 'res-az')    return (a.resolution || '').localeCompare(b.resolution || '');
-    if (sort === 'res-za')    return (b.resolution || '').localeCompare(a.resolution || '');
-    return 0;
-  });
-
-  const list = document.getElementById('flows-list');
-  list.innerHTML = '';
-
-  if (!filtered.length) {
-    list.innerHTML = '<div style="font-size:11px;color:var(--muted);padding:12px 0;">No flows yet.</div>';
-    return;
-  }
-
-  filtered.forEach(flowItem => {
-    const row = document.createElement('div');
-    row.className = 'flow-item';
-
-    const res = document.createElement('div');
-    res.className = 'flow-item-res';
-    res.textContent = flowItem.resolution || '(untitled)';
-
-    const date = document.createElement('div');
-    date.className = 'flow-item-date';
-    date.textContent = new Date(flowItem.updated_at).toLocaleDateString();
-
-    const del = document.createElement('button');
-    del.className = 'flow-item-del';
-    del.textContent = '×';
-    del.onclick = async (e) => {
-      e.stopPropagation();
-      if (!confirm('Delete this flow?')) return;
-      await db.from('flows').delete().eq('id', flowItem.id);
-      allCloudFlows = allCloudFlows.filter(f => f.id !== flowItem.id);
-      filterFlows();
-    };
-
-    row.onclick = () => {
-      flow = flowItem.data;
-      currentFlowId = flowItem.id;
-      document.getElementById('res').value = flowItem.resolution || '';
-      renderFlow();
-      closeModal('flows-modal');
-    };
-
-    row.appendChild(res);
-    row.appendChild(date);
-    row.appendChild(del);
-    list.appendChild(row);
-  });
-}
-
-function closeModal(id) {
-  document.getElementById(id).classList.add('hidden');
-}
-
-document.querySelectorAll('.modal-overlay').forEach(el => {
-  el.addEventListener('click', e => { if (e.target === el) el.classList.add('hidden'); });
-});
-
 function exportPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
@@ -1258,8 +1052,40 @@ function buildCard(speechId, card) {
   delBtn.onclick = () => deleteCard(speechId, card.id);
   cardEl.appendChild(delBtn);
 
+  const copyBtn = document.createElement('button');
+  copyBtn.className = 'card-copy';
+  copyBtn.title = 'Copy text';
+  copyBtn.textContent = '⎘';
+  copyBtn.onclick = (e) => {
+    e.stopPropagation();
+    const text = card.text;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+    } else {
+      fallbackCopy(text);
+    }
+    copyBtn.textContent = '✓';
+    setTimeout(() => { copyBtn.textContent = '⎘'; }, 1000);
+  };
+  cardEl.appendChild(copyBtn);
+
+  const arrowOverlay = document.createElement('div');
+  arrowOverlay.className = 'card-arrow-overlay';
+  arrowOverlay.onclick = (e) => handleArrowClick(speechId, card.id, e);
+  cardEl.appendChild(arrowOverlay);
+
   setTimeout(() => autoResize(textarea), 0);
   return cardEl;
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;opacity:0;';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); } catch(e) { console.warn('Copy failed:', e); }
+  ta.remove();
 }
 
 function autoResize(ta) {
@@ -1298,14 +1124,17 @@ function renderFlow() {
     col.appendChild(cardsArea);
     grid.appendChild(col);
   });
+
+  renderArrows();
 }
 
 function clearAll() {
   if (!confirm('Clear all cards?')) return;
   settings.speeches.forEach(s => flow[s.id] = []);
-  currentFlowId = null;
+  arrows = [];
   document.getElementById('res').value = '';
   renderFlow();
+  renderArrows();
   save();
 }
 
@@ -1313,6 +1142,7 @@ function save() {
   try {
     localStorage.setItem('ldflow', JSON.stringify(flow));
     localStorage.setItem('ldflow-res', document.getElementById('res').value);
+    localStorage.setItem('ldflow-arrows', JSON.stringify(arrows));
   } catch(e) {}
 }
 
@@ -1322,12 +1152,152 @@ function load() {
     if (saved) flow = JSON.parse(saved);
     const res = localStorage.getItem('ldflow-res');
     if (res) document.getElementById('res').value = res;
+    const savedArrows = localStorage.getItem('ldflow-arrows');
+    if (savedArrows) arrows = JSON.parse(savedArrows);
   } catch(e) {}
   renderFlow();
 }
 
 document.getElementById('res').addEventListener('input', save);
 setInterval(save, 4000);
+
+let arrows = [];
+let arrowMode = false;
+let arrowSrc = null;
+let arrowIdCounter = 0;
+
+function nextArrowId() {
+  return ++arrowIdCounter + '-' + Date.now();
+}
+
+function deleteArrow(arrowId) {
+  arrows = arrows.filter(a => a.id !== arrowId);
+  save();
+  renderArrows();
+}
+
+function toggleArrowMode() {
+  arrowMode = !arrowMode;
+  arrowSrc = null;
+  document.querySelectorAll('.card.arrow-src').forEach(el => el.classList.remove('arrow-src'));
+  document.getElementById('arrow-mode-btn').classList.toggle('active', arrowMode);
+  document.getElementById('grid').classList.toggle('arrow-mode', arrowMode);
+}
+
+function handleArrowClick(colId, cardId, e) {
+  if (!arrowMode) return;
+  e.stopPropagation();
+  if (!arrowSrc) {
+    arrowSrc = { colId, cardId };
+    const cardEl = document.querySelector(`[data-col="${colId}"] [data-card="${cardId}"]`);
+    if (cardEl) cardEl.classList.add('arrow-src');
+  } else if (arrowSrc.colId === colId && arrowSrc.cardId === cardId) {
+    const cardEl = document.querySelector(`[data-col="${colId}"] [data-card="${cardId}"]`);
+    if (cardEl) cardEl.classList.remove('arrow-src');
+    arrowSrc = null;
+  } else {
+    arrows.push({ id: nextArrowId(), fromCol: arrowSrc.colId, fromCard: arrowSrc.cardId, toCol: colId, toCard: cardId });
+    const srcEl = document.querySelector(`[data-col="${arrowSrc.colId}"] [data-card="${arrowSrc.cardId}"]`);
+    if (srcEl) srcEl.classList.remove('arrow-src');
+    arrowSrc = null;
+    save();
+    renderArrows();
+  }
+}
+
+function getCardPos(colId, cardId) {
+  const grid = document.getElementById('grid');
+  const el = document.querySelector(`[data-col="${colId}"] [data-card="${cardId}"]`);
+  if (!el) return null;
+  const gridRect = grid.getBoundingClientRect();
+  const elRect = el.getBoundingClientRect();
+  return {
+    left:   elRect.left   - gridRect.left + grid.scrollLeft,
+    top:    elRect.top    - gridRect.top  + grid.scrollTop,
+    right:  elRect.right  - gridRect.left + grid.scrollLeft,
+    bottom: elRect.bottom - gridRect.top  + grid.scrollTop,
+    width:  elRect.width,
+    height: elRect.height,
+  };
+}
+
+function renderArrows() {
+  const grid = document.getElementById('grid');
+  let svg = document.getElementById('arrows-svg');
+  if (!svg) {
+    svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.id = 'arrows-svg';
+    grid.appendChild(svg);
+  }
+  svg.innerHTML = '';
+
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+  marker.setAttribute('id', 'arr');
+  marker.setAttribute('markerWidth', '8');
+  marker.setAttribute('markerHeight', '6');
+  marker.setAttribute('refX', '8');
+  marker.setAttribute('refY', '3');
+  marker.setAttribute('orient', 'auto');
+  const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+  poly.setAttribute('points', '0 0, 8 3, 0 6');
+  poly.setAttribute('fill', '#1a5c9b');
+  marker.appendChild(poly);
+  defs.appendChild(marker);
+  svg.appendChild(defs);
+
+  arrows.forEach(arrow => {
+    const from = getCardPos(arrow.fromCol, arrow.fromCard);
+    const to   = getCardPos(arrow.toCol,   arrow.toCard);
+    if (!from || !to) return;
+
+    let x1, y1, x2, y2;
+    const fromMidY = from.top + from.height / 2;
+    const toMidY   = to.top   + to.height   / 2;
+
+    if (from.right <= to.left) {
+      x1 = from.right; y1 = fromMidY; x2 = to.left;  y2 = toMidY;
+    } else if (from.left >= to.right) {
+      x1 = from.left;  y1 = fromMidY; x2 = to.right; y2 = toMidY;
+    } else {
+      x1 = from.left + from.width / 2; y1 = from.bottom;
+      x2 = to.left   + to.width   / 2; y2 = to.top;
+    }
+
+    const dx = Math.abs(x2 - x1);
+    const cp1x = x1 + (x2 >= x1 ?  dx * 0.5 : -dx * 0.5);
+    const cp2x = x2 + (x2 >= x1 ? -dx * 0.5 :  dx * 0.5);
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', `M ${x1} ${y1} C ${cp1x} ${y1} ${cp2x} ${y2} ${x2} ${y2}`);
+    path.setAttribute('stroke', '#1a5c9b');
+    path.setAttribute('stroke-width', '2');
+    path.setAttribute('fill', 'none');
+    path.setAttribute('marker-end', 'url(#arr)');
+    svg.appendChild(path);
+
+    const mx = (x1 + x2) / 2;
+    const my = (y1 + y2) / 2;
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.style.cursor = 'pointer';
+    g.style.pointerEvents = 'all';
+    g.onclick = (e) => { e.stopPropagation(); deleteArrow(arrow.id); };
+
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', mx); circle.setAttribute('cy', my); circle.setAttribute('r', '8');
+    circle.setAttribute('fill', 'var(--surface)'); circle.setAttribute('stroke', '#1a5c9b'); circle.setAttribute('stroke-width', '1.5');
+    g.appendChild(circle);
+
+    const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    txt.setAttribute('x', mx); txt.setAttribute('y', my + 4);
+    txt.setAttribute('text-anchor', 'middle'); txt.setAttribute('font-size', '12'); txt.setAttribute('fill', '#1a5c9b');
+    txt.textContent = '×';
+    g.appendChild(txt);
+    svg.appendChild(g);
+  });
+}
+
+window.addEventListener('resize', renderArrows);
 
 loadSettings();
 renderFlow();
