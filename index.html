@@ -404,12 +404,12 @@ select.speech-sel {
     <input class="res-input" id="res" placeholder="Enter resolution…" autocomplete="off" />
   </div>
   <div class="topbar-sep"></div>
-  <button class="topbar-btn" onclick="exportPDF()">↓ PDF</button>
-  <button class="topbar-btn" onclick="exportJSON()">↓ JSON</button>
-  <button class="topbar-btn" id="filter-toggle" onclick="toggleFilterBar()">⌕ search</button>
-  <button class="topbar-btn" id="settings-toggle" onclick="toggleSettings()">⚙ settings</button>
-  <button class="topbar-btn danger" onclick="clearAll()">✕ clear</button>
-  <button class="topbar-btn icon-only" onclick="toggleDark()" title="Toggle dark mode">◑</button>
+  <button type="button" class="topbar-btn" onclick="exportPDF()">↓ PDF</button>
+  <button type="button" class="topbar-btn" onclick="exportJSON()">↓ JSON</button>
+  <button type="button" class="topbar-btn" id="filter-toggle" onclick="toggleFilterBar()">⌕ search</button>
+  <button type="button" class="topbar-btn" id="settings-toggle" onclick="toggleSettings()">⚙ settings</button>
+  <button type="button" class="topbar-btn danger" onclick="clearAll()">✕ clear</button>
+  <button type="button" class="topbar-btn icon-only" onclick="toggleDark()" title="Toggle dark mode">◑</button>
 </div>
 
 <!-- SETTINGS -->
@@ -420,7 +420,7 @@ select.speech-sel {
       <div class="settings-body" style="flex-direction:column;align-items:flex-start;gap:10px;">
         <div class="cx-toggle-row">
           <label class="toggle-wrap">
-            <button class="toggle" id="cx-toggle" onclick="toggleCrossfire()"></button>
+            <button type="button" class="toggle" id="cx-toggle" onclick="toggleCrossfire()"></button>
             Show crossfire columns
           </label>
         </div>
@@ -431,7 +431,7 @@ select.speech-sel {
       <span class="settings-section-label">Tags</span>
       <div class="settings-body">
         <div class="tag-editor" id="tag-editor"></div>
-        <button class="tag-add-btn" onclick="addTag()">+ add tag</button>
+        <button type="button" class="tag-add-btn" onclick="addTag()">+ add tag</button>
       </div>
     </div>
     <div class="settings-section">
@@ -455,7 +455,7 @@ select.speech-sel {
           <span id="font-size-label">12px</span>
         </label>
         <label class="toggle-wrap" style="font-size:11px;color:var(--text2);">
-          <button class="toggle" id="wordcount-toggle" onclick="toggleWordCount()"></button>
+          <button type="button" class="toggle" id="wordcount-toggle" onclick="toggleWordCount()"></button>
           Word counts
         </label>
       </div>
@@ -463,8 +463,8 @@ select.speech-sel {
     <div class="settings-section">
       <span class="settings-section-label">Data</span>
       <div class="settings-body">
-        <button class="settings-btn" onclick="importJSON()">↑ Import JSON</button>
-        <button class="settings-btn danger" onclick="resetSettings()">reset all settings</button>
+        <button type="button" class="settings-btn" onclick="importJSON()">↑ Import JSON</button>
+        <button type="button" class="settings-btn danger" onclick="resetSettings()">reset all settings</button>
       </div>
     </div>
   </div>
@@ -476,20 +476,20 @@ select.speech-sel {
     <span class="timer-label">Speech</span>
     <select class="speech-sel" id="speech-sel" onchange="loadSpeech()"></select>
     <span class="timer-display" id="speech-disp">6:00</span>
-    <button class="tbtn" id="speech-btn" onclick="toggleSpeech()">start</button>
-    <button class="tbtn reset-btn" onclick="resetSpeech()" title="Reset">↺</button>
+    <button type="button" class="tbtn" id="speech-btn" onclick="toggleSpeech()">start</button>
+    <button type="button" class="tbtn reset-btn" onclick="resetSpeech()" title="Reset">↺</button>
   </div>
   <div class="timer-block">
     <span class="timer-label" style="color:var(--aff)">Aff prep</span>
     <span class="prep-display" id="aff-disp">4:00</span>
-    <button class="tbtn" id="aff-btn" onclick="togglePrep('aff')">use</button>
-    <button class="tbtn reset-btn" onclick="resetPrep('aff')" title="Reset">↺</button>
+    <button type="button" class="tbtn" id="aff-btn" onclick="togglePrep('aff')">use</button>
+    <button type="button" class="tbtn reset-btn" onclick="resetPrep('aff')" title="Reset">↺</button>
   </div>
   <div class="timer-block">
     <span class="timer-label" style="color:var(--neg)">Neg prep</span>
     <span class="prep-display" id="neg-disp">4:00</span>
-    <button class="tbtn" id="neg-btn" onclick="togglePrep('neg')">use</button>
-    <button class="tbtn reset-btn" onclick="resetPrep('neg')" title="Reset">↺</button>
+    <button type="button" class="tbtn" id="neg-btn" onclick="togglePrep('neg')">use</button>
+    <button type="button" class="tbtn reset-btn" onclick="resetPrep('neg')" title="Reset">↺</button>
   </div>
   <div class="timer-block push-right">
     <span class="timer-label">Total cards</span>
@@ -502,7 +502,7 @@ select.speech-sel {
   <input class="search-input" id="search-input" placeholder="Search cards… (Ctrl+F)" oninput="applyFilter()" />
   <span style="font-size:9px;color:var(--text3);letter-spacing:0.08em;">FILTER BY TAG:</span>
   <div id="filter-tag-btns" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
-  <button class="filter-clear" onclick="clearFilter()">✕ clear</button>
+  <button type="button" class="filter-clear" onclick="clearFilter()">✕ clear</button>
   <span class="filter-hint">ESC to close</span>
 </div>
 
@@ -542,7 +542,9 @@ let settings = {
 };
 
 function saveSettings() {
-  try { localStorage.setItem('ldflow-settings', JSON.stringify(settings)); } catch(e) {}
+  try {
+    localStorage.setItem('ldflow-settings', JSON.stringify(settings));
+  } catch (e) {}
 }
 function resetSettings() {
   if (!confirm('Reset all settings to defaults?')) return;
@@ -562,7 +564,7 @@ function loadSettings() {
       if (saved.prepSeconds) settings.prepSeconds = saved.prepSeconds;
       if (saved.fontSize) settings.fontSize = saved.fontSize;
     }
-  } catch(e) {}
+  } catch (e) {}
   applySettings();
 }
 function applySettings() {
@@ -574,7 +576,8 @@ function applySettings() {
   renderSpeechEditor();
   prepSeconds.aff = settings.prepSeconds;
   prepSeconds.neg = settings.prepSeconds;
-  renderPrep('aff'); renderPrep('neg');
+  renderPrep('aff');
+  renderPrep('neg');
   const pi = document.getElementById('prep-time-input');
   if (pi) pi.value = settings.prepSeconds;
   const fi = document.getElementById('font-size-input');
@@ -586,10 +589,10 @@ function applySettings() {
   if (sel) {
     const prev = sel.value;
     sel.innerHTML = '';
-    settings.speeches.forEach(s => {
+    settings.speeches.forEach(speech => {
       const opt = document.createElement('option');
-      opt.value = s.seconds;
-      opt.textContent = `${s.label} · ${s.time}`;
+      opt.value = speech.seconds;
+      opt.textContent = `${speech.label} · ${speech.time}`;
       sel.appendChild(opt);
     });
     if (prev) sel.value = prev;
@@ -611,7 +614,8 @@ function toggleDark() {
 function toggleCrossfire() {
   settings.showCrossfire = !settings.showCrossfire;
   document.getElementById('cx-toggle').classList.toggle('on', settings.showCrossfire);
-  saveSettings(); renderFlow();
+  saveSettings();
+  renderFlow();
 }
 function toggleWordCount() {
   settings.showWordCount = !settings.showWordCount;
@@ -624,8 +628,10 @@ function updatePrepTime(val) {
   if (isNaN(secs) || secs < 30) return;
   settings.prepSeconds = secs;
   saveSettings();
-  prepSeconds.aff = secs; prepSeconds.neg = secs;
-  renderPrep('aff'); renderPrep('neg');
+  prepSeconds.aff = secs;
+  prepSeconds.neg = secs;
+  renderPrep('aff');
+  renderPrep('neg');
 }
 function updateFontSize(val) {
   settings.fontSize = parseInt(val);
@@ -648,12 +654,21 @@ function renderTagEditor() {
     const input = document.createElement('input');
     input.className = 'tag-editor-input';
     input.value = tag.label;
-    input.oninput = function() { settings.tags[i].label = this.value; saveSettings(); renderFlow(); };
+    input.oninput = function() {
+      settings.tags[i].label = this.value;
+      saveSettings();
+      renderFlow();
+    };
     item.appendChild(input);
     const removeBtn = document.createElement('button');
     removeBtn.className = 'tag-editor-remove';
     removeBtn.textContent = '×';
-    removeBtn.onclick = () => { settings.tags.splice(i, 1); saveSettings(); renderTagEditor(); renderFlow(); };
+    removeBtn.onclick = () => {
+      settings.tags.splice(i, 1);
+      saveSettings();
+      renderTagEditor();
+      renderFlow();
+    };
     item.appendChild(removeBtn);
     editor.appendChild(item);
   });
@@ -664,9 +679,14 @@ function addTag() {
   const colors = ['#c05020','#208050','#205080','#806020','#602080','#808080'];
   const key = 't' + Date.now().toString(36).slice(-4);
   settings.tags.push({ key, label: 'new', color: colors[settings.tags.length % colors.length] });
-  saveSettings(); renderTagEditor(); renderFlow();
+  saveSettings();
+  renderTagEditor();
+  renderFlow();
   const inputs = document.querySelectorAll('.tag-editor-input');
-  if (inputs.length) { inputs[inputs.length-1].focus(); inputs[inputs.length-1].select(); }
+  if (inputs.length) {
+    inputs[inputs.length - 1].focus();
+    inputs[inputs.length - 1].select();
+  }
 }
 
 function renderSpeechEditor() {
@@ -685,7 +705,11 @@ function renderSpeechEditor() {
       inp.className = `speech-editor-input ${cls}`;
       inp.value = speech[field];
       inp.style.width = w + 'px';
-      inp.oninput = function() { settings.speeches[i][field] = this.value; saveSettings(); renderFlow(); };
+      inp.oninput = function() {
+        settings.speeches[i][field] = this.value;
+        saveSettings();
+        renderFlow();
+      };
       row.appendChild(inp);
     });
     editor.appendChild(row);
@@ -726,7 +750,8 @@ function renderFilterBar() {
     btn.onclick = () => {
       if (activeFilter.tags.has(t.key)) activeFilter.tags.delete(t.key);
       else activeFilter.tags.add(t.key);
-      renderFilterBar(); applyFilter();
+      renderFilterBar();
+      applyFilter();
     };
     wrap.appendChild(btn);
   });
@@ -754,7 +779,7 @@ function clearFilter() {
 
 // ─── FLOW DATA ────────────────────────────────────────────────
 let flow = {};
-settings.speeches.forEach(s => flow[s.id] = []);
+settings.speeches.forEach(speech => { flow[speech.id] = []; });
 
 function addCard(speechId) {
   const card = { id: Date.now(), text: '', tag: null };
@@ -776,10 +801,13 @@ function deleteCard(speechId, cardId) {
   const el = document.querySelector(`[data-col="${speechId}"] [data-card="${cardId}"]`);
   if (el) {
     el.style.transition = 'opacity 0.15s, transform 0.15s';
-    el.style.opacity = '0'; el.style.transform = 'translateY(-4px)';
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(-4px)';
     setTimeout(() => el.remove(), 150);
   }
-  updateColCount(speechId); updateTotalCount(); save();
+  updateColCount(speechId);
+  updateTotalCount();
+  save();
 }
 
 function toggleTag(speechId, cardId, tag) {
@@ -801,7 +829,9 @@ function toggleTag(speechId, cardId, tag) {
         btn.style.borderColor = ti.color;
         btn.style.color = ti.color;
       } else {
-        btn.style.background = ''; btn.style.borderColor = ''; btn.style.color = '';
+        btn.style.background = '';
+        btn.style.borderColor = '';
+        btn.style.color = '';
       }
     });
   }
@@ -821,7 +851,9 @@ function updateColCount(speechId) {
 
 function updateTotalCount() {
   let total = 0;
-  settings.speeches.forEach(s => { total += (flow[s.id] || []).filter(c => c.text.trim()).length; });
+  settings.speeches.forEach(speech => {
+    total += (flow[speech.id] || []).filter(c => c.text.trim()).length;
+  });
   const el = document.getElementById('total-cards');
   if (el) el.textContent = total;
 }
@@ -866,11 +898,20 @@ function buildCard(speechId, card) {
   textarea.oninput = function() {
     updateText(speechId, card.id, this.value);
     autoResize(this);
-    const wc = document.getElementById('wc-' + card.id);
-    if (wc) { const w = this.value.trim() ? this.value.trim().split(/\s+/).length : 0; wc.textContent = w ? w+'w' : ''; }
-    updateColCount(speechId); updateTotalCount();
+    const wordCountEl = document.getElementById('wc-' + card.id);
+    if (wordCountEl) {
+      const wordCount = this.value.trim() ? this.value.trim().split(/\s+/).length : 0;
+      wordCountEl.textContent = wordCount ? wordCount + 'w' : '';
+    }
+    updateColCount(speechId);
+    updateTotalCount();
   };
-  textarea.onkeydown = e => { if (e.key === 'Enter' && e.shiftKey) { e.preventDefault(); addCard(speechId); } };
+  textarea.onkeydown = e => {
+    if (e.key === 'Enter' && e.shiftKey) {
+      e.preventDefault();
+      addCard(speechId);
+    }
+  };
   textarea.onblur = () => save();
   cardEl.appendChild(textarea);
 
@@ -913,16 +954,20 @@ function fallbackCopy(text) {
   const ta = document.createElement('textarea');
   ta.value = text;
   ta.style.cssText = 'position:fixed;opacity:0;';
-  document.body.appendChild(ta); ta.select();
-  try { document.execCommand('copy'); } catch(e) {}
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); } catch (e) {}
   ta.remove();
 }
-function autoResize(ta) { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; }
+function autoResize(ta) {
+  ta.style.height = 'auto';
+  ta.style.height = ta.scrollHeight + 'px';
+}
 
 function renderFlow() {
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
-  const visible = settings.speeches.filter(s => settings.showCrossfire || !s.isCrossfire);
+  const visible = settings.speeches.filter(speech => settings.showCrossfire || !speech.isCrossfire);
 
   visible.forEach(speech => {
     if (!flow[speech.id]) flow[speech.id] = [];
@@ -940,7 +985,8 @@ function renderFlow() {
     lbl.textContent = speech.label;
     const cnt = document.createElement('span');
     cnt.className = 'col-count';
-    top.appendChild(lbl); top.appendChild(cnt);
+    top.appendChild(lbl);
+    top.appendChild(cnt);
     head.appendChild(top);
     const meta = document.createElement('div');
     meta.className = 'col-meta';
@@ -994,15 +1040,16 @@ function renderJumpNav(visible) {
 // ─── SAVE / LOAD ──────────────────────────────────────────────
 function clearAll() {
   if (!confirm('Clear all cards and resolution?')) return;
-  settings.speeches.forEach(s => flow[s.id] = []);
+  settings.speeches.forEach(speech => { flow[speech.id] = []; });
   document.getElementById('res').value = '';
-  renderFlow(); save();
+  renderFlow();
+  save();
 }
 function save() {
   try {
     localStorage.setItem('ldflow', JSON.stringify(flow));
     localStorage.setItem('ldflow-res', document.getElementById('res').value);
-  } catch(e) {}
+  } catch (e) {}
 }
 function load() {
   try {
@@ -1010,7 +1057,7 @@ function load() {
     if (saved) flow = JSON.parse(saved);
     const res = localStorage.getItem('ldflow-res');
     if (res) document.getElementById('res').value = res;
-  } catch(e) {}
+  } catch (e) {}
   renderFlow();
 }
 
@@ -1019,20 +1066,29 @@ function exportJSON() {
   const data = { resolution: document.getElementById('res').value, flow, exportedAt: new Date().toISOString() };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = (data.resolution || 'flow') + '.json'; a.click();
+  a.href = URL.createObjectURL(blob);
+  a.download = (data.resolution || 'flow') + '.json';
+  a.click();
   showToast('Flow exported as JSON');
 }
 function importJSON() {
   const inp = document.createElement('input');
-  inp.type = 'file'; inp.accept = '.json';
+  inp.type = 'file';
+  inp.accept = '.json';
   inp.onchange = e => {
-    const file = e.target.files[0]; if (!file) return;
+    const file = e.target.files[0];
+    if (!file) return;
     const reader = new FileReader();
     reader.onload = ev => {
       try {
         const data = JSON.parse(ev.target.result);
         if (data.resolution) document.getElementById('res').value = data.resolution;
-        if (data.flow) { flow = data.flow; renderFlow(); save(); showToast('Flow imported!'); }
+        if (data.flow) {
+          flow = data.flow;
+          renderFlow();
+          save();
+          showToast('Flow imported!');
+        }
       } catch { alert('Invalid JSON file'); }
     };
     reader.readAsText(file);
@@ -1041,7 +1097,11 @@ function importJSON() {
 }
 
 function hexToRgb(hex) {
-  return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
+  return [
+    parseInt(hex.slice(1, 3), 16),
+    parseInt(hex.slice(3, 5), 16),
+    parseInt(hex.slice(5, 7), 16),
+  ];
 }
 
 function exportPDF() {
@@ -1051,41 +1111,53 @@ function exportPDF() {
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const margin = 12;
-  const visible = settings.speeches.filter(s => settings.showCrossfire || !s.isCrossfire);
+  const visible = settings.speeches.filter(speech => settings.showCrossfire || !speech.isCrossfire);
   const colW = (pageW - margin * 2) / visible.length;
 
-  doc.setFont('courier', 'bold'); doc.setFontSize(11);
-  doc.setTextColor(26,25,23);
+  doc.setFont('courier', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(26, 25, 23);
   doc.text(resolution, margin, margin + 5);
-  doc.setFont('courier', 'normal'); doc.setFontSize(6); doc.setTextColor(120,115,108);
+  doc.setFont('courier', 'normal');
+  doc.setFontSize(6);
+  doc.setTextColor(120, 115, 108);
   doc.text('LD Flow · ' + new Date().toLocaleDateString(), margin, margin + 9);
 
   visible.forEach((speech, i) => {
     const x = margin + i * colW;
-    const side = speech.side === 'aff' ? [31,110,69] : [160,31,31];
-    doc.setFont('courier', 'bold'); doc.setFontSize(9); doc.setTextColor(...side);
+    const side = speech.side === 'aff' ? [31, 110, 69] : [160, 31, 31];
+    doc.setFont('courier', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...side);
     doc.text(speech.label, x + 2, margin + 17);
-    doc.setTextColor(100,96,90); doc.setFontSize(6); doc.setFont('courier', 'normal');
+    doc.setTextColor(100, 96, 90);
+    doc.setFontSize(6);
+    doc.setFont('courier', 'normal');
     doc.text(`${speech.name} · ${speech.time}`, x + 2, margin + 21);
-    doc.setDrawColor(200,195,188);
+    doc.setDrawColor(200, 195, 188);
     if (i > 0) doc.line(x, margin, x, pageH - margin);
     doc.setDrawColor(...side);
     doc.line(x, margin + 23, x + colW - 1, margin + 23);
-    doc.setTextColor(26,25,23); doc.setFontSize(7.5);
+    doc.setTextColor(26, 25, 23);
+    doc.setFontSize(7.5);
     let y = margin + 28;
     (flow[speech.id] || []).forEach(card => {
       if (!card.text.trim()) return;
       const lines = doc.splitTextToSize(card.text, colW - 6);
       if (y + lines.length * 4.2 > pageH - margin) return;
       if (card.tag) {
-        const t = settings.tags.find(t => t.key === card.tag);
-        if (t) {
-          doc.setTextColor(...hexToRgb(t.color || '#999')); doc.setFontSize(5.5);
-          doc.text('[' + t.label + ']', x + 2, y); y += 3.5;
+        const tagInfo = settings.tags.find(tag => tag.key === card.tag);
+        if (tagInfo) {
+          doc.setTextColor(...hexToRgb(tagInfo.color || '#999'));
+          doc.setFontSize(5.5);
+          doc.text('[' + tagInfo.label + ']', x + 2, y);
+          y += 3.5;
         }
       }
-      doc.setTextColor(26,25,23); doc.setFontSize(7.5);
-      doc.text(lines, x + 2, y); y += lines.length * 4.2 + 2.5;
+      doc.setTextColor(26, 25, 23);
+      doc.setFontSize(7.5);
+      doc.text(lines, x + 2, y);
+      y += lines.length * 4.2 + 2.5;
     });
   });
   doc.save((resolution || 'flow') + '.pdf');
@@ -1095,36 +1167,45 @@ function exportPDF() {
 // ─── TOAST ────────────────────────────────────────────────────
 let toastTimer;
 function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
+  const toastEl = document.getElementById('toast');
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+  toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2200);
 }
 
 // ─── TIMERS ───────────────────────────────────────────────────
-let speechSeconds = 360, speechRunning = false, speechTimer = null;
+let speechSeconds = 360;
+let speechRunning = false;
+let speechTimer = null;
 
 function loadSpeech() {
   speechSeconds = parseInt(document.getElementById('speech-sel').value);
-  clearInterval(speechTimer); speechRunning = false;
+  clearInterval(speechTimer);
+  speechRunning = false;
   document.getElementById('speech-btn').textContent = 'start';
   document.getElementById('speech-btn').className = 'tbtn';
   renderSpeech();
 }
 function toggleSpeech() {
   if (speechRunning) {
-    clearInterval(speechTimer); speechRunning = false;
+    clearInterval(speechTimer);
+    speechRunning = false;
     document.getElementById('speech-btn').textContent = 'start';
     document.getElementById('speech-btn').className = 'tbtn';
   } else {
     speechRunning = true;
     document.getElementById('speech-btn').textContent = 'stop';
     document.getElementById('speech-btn').className = 'tbtn active-speech';
-    speechTimer = setInterval(() => { speechSeconds--; renderSpeech(); }, 1000);
+    speechTimer = setInterval(() => {
+      speechSeconds--;
+      renderSpeech();
+    }, 1000);
   }
 }
 function resetSpeech() {
-  clearInterval(speechTimer); speechRunning = false;
+  clearInterval(speechTimer);
+  speechRunning = false;
   document.getElementById('speech-btn').textContent = 'start';
   document.getElementById('speech-btn').className = 'tbtn';
   loadSpeech();
@@ -1135,7 +1216,11 @@ function renderSpeech() {
   const sign = speechSeconds < 0 ? '-' : '';
   el.textContent = `${sign}${Math.floor(abs/60)}:${(abs%60).toString().padStart(2,'0')}`;
   el.className = 'timer-display';
-  if (speechRunning) el.classList.add(speechSeconds < 0 ? 'over' : speechSeconds <= 30 ? 'warn' : 'running');
+  if (speechRunning) {
+    if (speechSeconds < 0) el.classList.add('over');
+    else if (speechSeconds <= 30) el.classList.add('warn');
+    else el.classList.add('running');
+  }
 }
 
 let prepSeconds = { aff: 240, neg: 240 };
@@ -1145,23 +1230,29 @@ let prepTimer   = { aff: null, neg: null };
 function togglePrep(side) {
   const other = side === 'aff' ? 'neg' : 'aff';
   if (prepRunning[other]) {
-    clearInterval(prepTimer[other]); prepRunning[other] = false;
+    clearInterval(prepTimer[other]);
+    prepRunning[other] = false;
     document.getElementById(`${other}-btn`).textContent = 'use';
     document.getElementById(`${other}-btn`).className = 'tbtn';
   }
   if (prepRunning[side]) {
-    clearInterval(prepTimer[side]); prepRunning[side] = false;
+    clearInterval(prepTimer[side]);
+    prepRunning[side] = false;
     document.getElementById(`${side}-btn`).textContent = 'use';
     document.getElementById(`${side}-btn`).className = 'tbtn';
   } else {
     prepRunning[side] = true;
     document.getElementById(`${side}-btn`).textContent = 'stop';
     document.getElementById(`${side}-btn`).className = `tbtn active-${side}`;
-    prepTimer[side] = setInterval(() => { prepSeconds[side]--; renderPrep(side); }, 1000);
+    prepTimer[side] = setInterval(() => {
+      prepSeconds[side]--;
+      renderPrep(side);
+    }, 1000);
   }
 }
 function resetPrep(side) {
-  clearInterval(prepTimer[side]); prepRunning[side] = false;
+  clearInterval(prepTimer[side]);
+  prepRunning[side] = false;
   prepSeconds[side] = settings.prepSeconds;
   document.getElementById(`${side}-btn`).textContent = 'use';
   document.getElementById(`${side}-btn`).className = 'tbtn';
@@ -1184,7 +1275,8 @@ document.addEventListener('keydown', e => {
     e.preventDefault();
     const fb = document.getElementById('filter-bar');
     const btn = document.getElementById('filter-toggle');
-    fb.style.display = 'flex'; btn.classList.add('active');
+    fb.style.display = 'flex';
+    btn.classList.add('active');
     document.getElementById('search-input').focus();
   }
   if (e.key === 'Escape') {
