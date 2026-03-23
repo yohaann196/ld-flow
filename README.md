@@ -34,7 +34,6 @@
 ## stack
 
 - Vanilla HTML, CSS, JavaScript — no framework
-- [Supabase](https://supabase.com) for auth and cloud storage
 - [jsPDF](https://github.com/parallax/jsPDF) for PDF export
 - [IBM Plex Mono](https://fonts.google.com/specimen/IBM+Plex+Mono) via Google Fonts
 
