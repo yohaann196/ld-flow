@@ -205,7 +205,6 @@ body {
 .timer-block { display: flex; align-items: center; gap: 8px; padding: 0 18px; height: 100%; }
 .timer-block:first-child { padding-left: 0; }
 .timer-block + .timer-block { border-left: 1px solid var(--border); }
-.timer-block.push-right { margin-left: auto; }
 
 .timer-label {
   font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
@@ -490,10 +489,6 @@ select.speech-sel {
     <span class="prep-display" id="neg-disp">4:00</span>
     <button type="button" class="tbtn" id="neg-btn" onclick="togglePrep('neg')">use</button>
     <button type="button" class="tbtn reset-btn" onclick="resetPrep('neg')" title="Reset">↺</button>
-  </div>
-  <div class="timer-block push-right">
-    <span class="timer-label">Total cards</span>
-    <span id="total-cards" style="font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text2);">0</span>
   </div>
 </div>
 
@@ -792,7 +787,6 @@ function addCard(speechId) {
   addBtn.textContent = '+ add';
   el.querySelector('.card-ta').focus();
   updateColCount(speechId);
-  updateTotalCount();
   save();
 }
 
@@ -806,7 +800,6 @@ function deleteCard(speechId, cardId) {
     setTimeout(() => el.remove(), 150);
   }
   updateColCount(speechId);
-  updateTotalCount();
   save();
 }
 
@@ -847,15 +840,6 @@ function updateColCount(speechId) {
   const count = (flow[speechId] || []).filter(c => c.text.trim()).length;
   const el = document.querySelector(`[data-col="${speechId}"] .col-count`);
   if (el) el.textContent = count > 0 ? count : '';
-}
-
-function updateTotalCount() {
-  let total = 0;
-  settings.speeches.forEach(speech => {
-    total += (flow[speech.id] || []).filter(c => c.text.trim()).length;
-  });
-  const el = document.getElementById('total-cards');
-  if (el) el.textContent = total;
 }
 
 function buildCard(speechId, card) {
@@ -904,7 +888,6 @@ function buildCard(speechId, card) {
       wordCountEl.textContent = wordCount ? wordCount + 'w' : '';
     }
     updateColCount(speechId);
-    updateTotalCount();
   };
   textarea.onkeydown = e => {
     if (e.key === 'Enter' && e.shiftKey) {
@@ -1012,7 +995,6 @@ function renderFlow() {
 
   renderJumpNav(visible);
   renderFilterBar();
-  updateTotalCount();
 }
 
 // ─── JUMP NAV ─────────────────────────────────────────────────
